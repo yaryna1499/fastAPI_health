@@ -3,8 +3,12 @@
 from fastapi import FastAPI, status
 from pydantic import BaseModel
 import uvicorn
+from prometheus_client import make_asgi_app
+
 
 app = FastAPI()
+metrics_app = make_asgi_app()
+app.mount("/metrics", metrics_app)
 
 
 class HealthCheck(BaseModel):
