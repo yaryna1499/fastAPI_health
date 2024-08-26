@@ -10,7 +10,7 @@ from starlette_exporter import PrometheusMiddleware, handle_metrics
 
 
 app = FastAPI()
-app.add_middleware(PrometheusMiddleware, app_name="hello_world")
+app.add_middleware(PrometheusMiddleware, app_name="hello_world", skip_paths=["/metrics"])
 app.add_route("/metrics", handle_metrics)
 
 
