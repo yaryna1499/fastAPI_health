@@ -3,14 +3,15 @@
 from fastapi import FastAPI, status
 from pydantic import BaseModel
 import uvicorn
-from prometheus_client import make_asgi_app
 from multiprocessing import Queue
 from logging_loki import LokiQueueHandler
 import logging
+from starlette_exporter import PrometheusMiddleware, handle_metrics
+
 
 app = FastAPI()
-metrics_app = make_asgi_app()
-app.mount("/metrics", metrics_app)
+app.add_middleware(PrometheusMiddleware, app_name="hello_world")
+app.add_route("/metrics", handle_metrics)
 
 
 loki_logs_handler = LokiQueueHandler(
