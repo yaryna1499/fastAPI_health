@@ -4,11 +4,24 @@ from fastapi import FastAPI, status
 from pydantic import BaseModel
 import uvicorn
 from prometheus_client import make_asgi_app
-
+from multiprocessing import Queue
+from logging_loki import LokiQueueHandler
+import logging
 
 app = FastAPI()
 metrics_app = make_asgi_app()
 app.mount("/metrics", metrics_app)
+
+
+loki_logs_handler = LokiQueueHandler(
+    Queue(-1),
+    url="http://18.235.248.167:3100/loki/api/v1/push",
+    tags={"application": "fastapi"},
+    version="1",
+)
+
+uvicorn_access_logger = logging.getLogger("uvicorn.access")
+uvicorn_access_logger.addHandler(loki_logs_handler)
 
 
 class HealthCheck(BaseModel):
@@ -35,6 +48,7 @@ def get_health() -> HealthCheck:
     Returns:
         HealthCheck: Returns a JSON response with the health status
     """
+    logging.error("test error")
     return HealthCheck(status="OK")
 
 
