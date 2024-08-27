@@ -15,6 +15,7 @@ EXPOSE_PORT = 8000
 OTLP_GRPC_ENDPOINT = "http://18.235.248.167:4317"
 
 app = FastAPI()
+# logging
 loki_logs_handler = LokiQueueHandler(
     Queue(-1),
     url="http://18.235.248.167:3100/loki/api/v1/push",
@@ -24,12 +25,6 @@ loki_logs_handler = LokiQueueHandler(
 
 uvicorn_access_logger = logging.getLogger("uvicorn.access")
 uvicorn_access_logger.addHandler(loki_logs_handler)
-# Setting metrics middleware
-app.add_middleware(PrometheusMiddleware, app_name=APP_NAME)
-app.add_route("/metrics", metrics)
-
-# Setting OpenTelemetry exporter
-setting_otlp(app, APP_NAME, OTLP_GRPC_ENDPOINT)
 
 
 class EndpointFilter(logging.Filter):
@@ -40,7 +35,12 @@ class EndpointFilter(logging.Filter):
 
 # Filter out /endpoint
 uvicorn_access_logger.addFilter(EndpointFilter())
+# Setting metrics middleware
+app.add_middleware(PrometheusMiddleware, app_name=APP_NAME)
+app.add_route("/metrics", metrics)
 
+# Setting OpenTelemetry exporter
+setting_otlp(app, APP_NAME, OTLP_GRPC_ENDPOINT)
 
 class HealthCheck(BaseModel):
     """Response model to validate and return when performing a health check."""
@@ -66,9 +66,6 @@ def get_health() -> HealthCheck:
     Returns:
         HealthCheck: Returns a JSON response with the health status
     """
-    uvicorn_access_logger.error("test error")
-    uvicorn_access_logger.exception("test exception")
-    uvicorn_access_logger.warning("test warning")
     return HealthCheck(status="OK")
 
 
