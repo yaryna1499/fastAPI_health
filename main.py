@@ -5,68 +5,19 @@ from typing import Optional
 import uvicorn
 from fastapi import FastAPI, Response
 from metrics import PrometheusMiddleware, metrics, setting_otlp
-from multiprocessing import Queue
-from logging_loki import LokiQueueHandler
-from pydantic import BaseModel
-from starlette import status 
 
 APP_NAME = "app_test"
 EXPOSE_PORT = 8000
 OTLP_GRPC_ENDPOINT = "http://18.235.248.167:4317"
 
 app = FastAPI()
-# logging
-loki_logs_handler = LokiQueueHandler(
-    Queue(-1),
-    url="http://18.235.248.167:3100/loki/api/v1/push",
-    tags={"application": "fastapi"},
-    version="1",
-)
 
-uvicorn_access_logger = logging.getLogger("uvicorn.access")
-uvicorn_access_logger.addHandler(loki_logs_handler)
-
-
-class EndpointFilter(logging.Filter):
-    # Uvicorn endpoint access log filter
-    def filter(self, record: logging.LogRecord) -> bool:
-        return record.getMessage().find("GET /metrics") == -1
-
-
-# Filter out /endpoint
-uvicorn_access_logger.addFilter(EndpointFilter())
 # Setting metrics middleware
 app.add_middleware(PrometheusMiddleware, app_name=APP_NAME)
 app.add_route("/metrics", metrics)
 
 # Setting OpenTelemetry exporter
 setting_otlp(app, APP_NAME, OTLP_GRPC_ENDPOINT)
-
-class HealthCheck(BaseModel):
-    """Response model to validate and return when performing a health check."""
-
-    status: str = "OK"
-
-
-@app.get(
-    "/health",
-    tags=["healthcheck"],
-    summary="Perform a Health Check",
-    response_description="Return HTTP Status Code 200 (OK)",
-    status_code=status.HTTP_200_OK,
-    response_model=HealthCheck,
-)
-def get_health() -> HealthCheck:
-    """
-    ## Perform a Health Check
-    Endpoint to perform a healthcheck on. This endpoint can primarily be used Docker
-    to ensure a robust container orchestration and management is in place. Other
-    services which rely on proper functioning of the API service will not deploy if this
-    endpoint returns any other HTTP status code except 200 (OK).
-    Returns:
-        HealthCheck: Returns a JSON response with the health status
-    """
-    return HealthCheck(status="OK")
 
 
 @app.get("/")
