@@ -2,6 +2,7 @@ import time
 from typing import Tuple
 
 from opentelemetry import trace
+from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
 from opentelemetry.exporter.otlp.proto.grpc._log_exporter import OTLPLogExporter
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from opentelemetry.instrumentation.logging import LoggingInstrumentor
@@ -127,19 +128,20 @@ def metrics(request: Request) -> Response:
 
 def set_otlp(app: ASGIApp, app_name: str, endpoint: str) -> None:
     resource = Resource.create(
-        attributes={"service.name": "backend", "compose_service": app_name}
+        attributes={"service.name": app_name}
     )
-    exporter = OTLPLogExporter(insecure=True)
+    exporter_span = OTLPSpanExporter(endpoint=endpoint)
+    exporter_logging = OTLPLogExporter(insecure=True, endpoint=endpoint)
     # logs
     logger_provider = LoggerProvider(resource=resource)
     set_logger_provider(logger_provider)
-    logger_provider.add_log_record_processor(BatchLogRecordProcessor(exporter))
+    logger_provider.add_log_record_processor(BatchLogRecordProcessor(exporter_logging))
     handler = LoggingHandler(level=logging.NOTSET, logger_provider=logger_provider)
     logging.getLogger().addHandler(handler)
     # traces
     tracer = TracerProvider(resource=resource)
     trace.set_tracer_provider(tracer)
-    tracer.add_span_processor(BatchSpanProcessor(exporter))
+    tracer.add_span_processor(BatchSpanProcessor(exporter_span))
 
     LoggingInstrumentor().instrument()
     FastAPIInstrumentor.instrument_app(app, tracer_provider=tracer)
