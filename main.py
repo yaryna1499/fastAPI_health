@@ -9,7 +9,7 @@ import logging.handlers
 
 APP_NAME = "app_test123"
 EXPOSE_PORT = 8000
-OTLP_GRPC_ENDPOINT = "http://18.235.248.167:4318"
+OTLP_GRPC_ENDPOINT = "http://18.235.248.167:55691"
 
 app = FastAPI()
 
