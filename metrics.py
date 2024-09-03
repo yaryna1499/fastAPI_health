@@ -2,7 +2,7 @@ import time
 from typing import Tuple
 
 from opentelemetry import trace
-from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+from opentelemetry.exporter.otlp.proto.grpc._log_exporter import OTLPLogExporter
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from opentelemetry.instrumentation.logging import LoggingInstrumentor
 from opentelemetry.sdk.resources import Resource
@@ -19,6 +19,13 @@ from starlette.responses import Response
 from starlette.routing import Match
 from starlette.status import HTTP_500_INTERNAL_SERVER_ERROR
 from starlette.types import ASGIApp
+import logging
+from opentelemetry._logs import set_logger_provider
+from opentelemetry.sdk._logs import LoggerProvider, LoggingHandler
+from opentelemetry.sdk._logs.export import BatchLogRecordProcessor
+
+
+
 
 INFO = Gauge("fastapi_app_info", "FastAPI application information.", ["app_name"])
 REQUESTS = Counter(
@@ -118,22 +125,21 @@ def metrics(request: Request) -> Response:
     )
 
 
-def setting_otlp(
-    app: ASGIApp, app_name: str, endpoint: str, log_correlation: bool = True
-) -> None:
-    # Setting OpenTelemetry
-    # set the service name to show in traces
+def set_otlp(app: ASGIApp, app_name: str, endpoint: str) -> None:
     resource = Resource.create(
-        attributes={"service.name": app_name, "compose_service": app_name}
+        attributes={"service.name": "backend", "compose_service": app_name}
     )
-
-    # set the tracer provider
+    exporter = OTLPLogExporter(insecure=True)
+    # logs
+    logger_provider = LoggerProvider(resource=resource)
+    set_logger_provider(logger_provider)
+    logger_provider.add_log_record_processor(BatchLogRecordProcessor(exporter))
+    handler = LoggingHandler(level=logging.NOTSET, logger_provider=logger_provider)
+    logging.getLogger().addHandler(handler)
+    # traces
     tracer = TracerProvider(resource=resource)
     trace.set_tracer_provider(tracer)
+    tracer.add_span_processor(BatchSpanProcessor(exporter))
 
-    tracer.add_span_processor(BatchSpanProcessor(OTLPSpanExporter(endpoint=endpoint)))
-
-    if log_correlation:
-        LoggingInstrumentor().instrument(set_logging_format=True)
-
+    LoggingInstrumentor().instrument()
     FastAPIInstrumentor.instrument_app(app, tracer_provider=tracer)
