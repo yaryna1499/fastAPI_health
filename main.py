@@ -10,7 +10,7 @@ import sys
 # open telemetry imports ______________________________
 from opentelemetry import trace
 from opentelemetry._logs import set_logger_provider
-from opentelemetry.exporter.otlp.proto.http._log_exporter import (
+from opentelemetry.exporter.otlp.proto.grpc._log_exporter import (
     OTLPLogExporter,
 )
 from opentelemetry.sdk._logs import LoggerProvider, LoggingHandler
@@ -19,7 +19,7 @@ from opentelemetry.sdk.resources import Resource
 # _________________________________
 APP_NAME = "app_test123"
 EXPOSE_PORT = 8000
-OTLP_HTTP_ENDPOINT = "http://18.235.248.167:4344"
+OTLP_GRPC_ENDPOINT = "http://18.235.248.167:4343"
 
 app = FastAPI()
 
@@ -39,7 +39,7 @@ resource = Resource.create(
 logger_provider = LoggerProvider(resource=resource)
 # set the providers
 set_logger_provider(logger_provider)
-exporter = OTLPLogExporter(endpoint=OTLP_HTTP_ENDPOINT, timeout=5)
+exporter = OTLPLogExporter(endpoint=OTLP_GRPC_ENDPOINT, timeout=5, insecure=True)
 # add the batch processors to the trace provider
 logger_provider.add_log_record_processor(BatchLogRecordProcessor(exporter))
 handler = LoggingHandler(level=logging.DEBUG, logger_provider=logger_provider)
