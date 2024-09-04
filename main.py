@@ -1,22 +1,12 @@
-import logging
+from logger import logger
 import random
 import time
 from typing import Optional
 import uvicorn
 from fastapi import FastAPI, Response
 from metrics import PrometheusMiddleware, metrics
-import logging.handlers
-import sys
-# open telemetry imports ______________________________
-from opentelemetry import trace
-from opentelemetry._logs import set_logger_provider
-from opentelemetry.exporter.otlp.proto.grpc._log_exporter import (
-    OTLPLogExporter,
-)
-from opentelemetry.sdk._logs import LoggerProvider, LoggingHandler
-from opentelemetry.sdk._logs.export import BatchLogRecordProcessor
-from opentelemetry.sdk.resources import Resource
-# _________________________________
+from otlp import set_otlp
+
 APP_NAME = "app_test123"
 EXPOSE_PORT = 8000
 OTLP_GRPC_ENDPOINT = "http://18.235.248.167:4343"
@@ -28,32 +18,7 @@ app.add_middleware(PrometheusMiddleware, app_name=APP_NAME)
 app.add_route("/metrics", metrics)
 
 # Setting OpenTelemetry
-resource = Resource.create(
-        {
-            "service.name": APP_NAME,
-            "service.instance.id": "123456789",
-        }
-    )
-
-# create the providers
-logger_provider = LoggerProvider(resource=resource)
-# set the providers
-set_logger_provider(logger_provider)
-exporter = OTLPLogExporter(endpoint=OTLP_GRPC_ENDPOINT, timeout=5, insecure=True)
-# add the batch processors to the trace provider
-logger_provider.add_log_record_processor(BatchLogRecordProcessor(exporter))
-handler = LoggingHandler(level=logging.DEBUG, logger_provider=logger_provider)
-# Create different namespaced loggers
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
-stream_handler = logging.StreamHandler(sys.stdout)
-log_formatter = logging.Formatter("%(asctime)s [%(processName)s: %(process)d] [%(threadName)s: %(thread)d] [%(levelname)s] %(name)s: %(message)s")
-stream_handler.setFormatter(log_formatter)
-logger.addHandler(stream_handler)
-logger.addHandler(handler)
-
-logger.info('API is starting up')
-#_________________________
+set_otlp(app, APP_NAME, OTLP_GRPC_ENDPOINT)
 
 
 @app.get("/")
