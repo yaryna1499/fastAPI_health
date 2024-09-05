@@ -40,4 +40,4 @@ def set_otlp(app: ASGIApp, app_name: str, otlp_endp: str):
     # logger.addFilter(EndpointFilter())
     logger.addHandler(handler)
     # LoggingInstrumentor().instrument(set_logging_format=True)
-    FastAPIInstrumentor.instrument_app(app, tracer_provider=tracer)
+    # FastAPIInstrumentor.instrument_app(app, tracer_provider=tracer)
