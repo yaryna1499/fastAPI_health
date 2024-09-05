@@ -15,29 +15,31 @@ from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from starlette.types import ASGIApp
 from opentelemetry.instrumentation.logging import LoggingInstrumentor
 
-class EndpointFilter(logging.Filter):
-    def filter(self, record: logging.LogRecord) -> bool:
-        return record.getMessage().find("GET /metrics") == -1
 
-def set_otlp(app: ASGIApp, app_name: str, otlp_endp: str):
+
+def set_otlp_tracing(app: ASGIApp, app_name: str, otlp_endp: str):
     resource = Resource.create({"service.name": app_name,})
-    # TRACING
     # set the tracer provider
     tracer = TracerProvider(resource=resource)
     trace.set_tracer_provider(tracer)
     tracer.add_span_processor(BatchSpanProcessor(OTLPSpanExporter(endpoint=otlp_endp)))
-    # LOGGING
-    # create the providers
-    logger_provider = LoggerProvider(resource=resource)
-    # set the providers
-    set_logger_provider(logger_provider)
-    exporter = OTLPLogExporter(endpoint=otlp_endp, timeout=5, insecure=True)
-    # add the batch processors to the trace provider
-    logger_provider.add_log_record_processor(BatchLogRecordProcessor(exporter))
-    handler = LoggingHandler(level=logging.DEBUG, logger_provider=logger_provider)
-    # formatter = logging.Formatter("%(asctime)s %(levelname)s [%(name)s] [%(filename)s:%(lineno)d] [trace_id=%(otelTraceID)s span_id=%(otelSpanID)s resource.service.name=%(otelServiceName)s] - %(message)s")
-    # handler.setFormatter(formatter)
-    # logger.addFilter(EndpointFilter())
-    logger.addHandler(handler)
-    # LoggingInstrumentor().instrument(set_logging_format=True)
-    # FastAPIInstrumentor.instrument_app(app, tracer_provider=tracer)
+    # collect and export telemetry data, such as traces, from logging events
+    LoggingInstrumentor().instrument()
+    FastAPIInstrumentor.instrument_app(app, tracer_provider=tracer)
+
+
+# def set_otlp_logging():
+    # resource = Resource.create({"service.name": app_name,})
+#     # LOGGING
+#     # create the providers
+#     logger_provider = LoggerProvider(resource=resource)
+#     # set the providers
+#     set_logger_provider(logger_provider)
+#     exporter = OTLPLogExporter(endpoint=otlp_endp, timeout=5, insecure=True)
+#     # add the batch processors to the trace provider
+#     logger_provider.add_log_record_processor(BatchLogRecordProcessor(exporter))
+#     handler = LoggingHandler(level=logging.DEBUG, logger_provider=logger_provider)
+#     # formatter = logging.Formatter("%(asctime)s %(levelname)s [%(name)s] [%(filename)s:%(lineno)d] [trace_id=%(otelTraceID)s span_id=%(otelSpanID)s resource.service.name=%(otelServiceName)s] - %(message)s")
+#     # handler.setFormatter(formatter)
+#     # logger.addFilter(EndpointFilter())
+#     logger.addHandler(handler)
