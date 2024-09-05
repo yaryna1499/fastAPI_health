@@ -15,6 +15,10 @@ from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from starlette.types import ASGIApp
 from opentelemetry.instrumentation.logging import LoggingInstrumentor
 
+class EndpointFilter(logging.Filter):
+    def filter(self, record: logging.LogRecord) -> bool:
+        return record.getMessage().find("GET /metrics") == -1
+
 def set_otlp(app: ASGIApp, app_name: str, otlp_endp: str):
     resource = Resource.create({"service.name": app_name,})
     # TRACING
@@ -33,6 +37,7 @@ def set_otlp(app: ASGIApp, app_name: str, otlp_endp: str):
     handler = LoggingHandler(level=logging.DEBUG, logger_provider=logger_provider)
     formatter = logging.Formatter("%(asctime)s %(levelname)s [%(name)s] [%(filename)s:%(lineno)d] [trace_id=%(otelTraceID)s span_id=%(otelSpanID)s resource.service.name=%(otelServiceName)s] - %(message)s")
     handler.setFormatter(formatter)
+    logger.addFilter(EndpointFilter())
     logger.addHandler(handler)
     LoggingInstrumentor().instrument(set_logging_format=True)
     FastAPIInstrumentor.instrument_app(app, tracer_provider=tracer)
