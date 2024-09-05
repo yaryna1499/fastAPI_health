@@ -31,8 +31,8 @@ def set_otlp(app: ASGIApp, app_name: str, otlp_endp: str):
     # add the batch processors to the trace provider
     logger_provider.add_log_record_processor(BatchLogRecordProcessor(exporter))
     handler = LoggingHandler(level=logging.DEBUG, logger_provider=logger_provider)
+    formatter = logging.Formatter("%(asctime)s %(levelname)s [%(name)s] [%(filename)s:%(lineno)d] [trace_id=%(otelTraceID)s span_id=%(otelSpanID)s resource.service.name=%(otelServiceName)s] - %(message)s")
+    handler.setFormatter(formatter)
     logger.addHandler(handler)
-    # formatter = logging.Formatter("%(asctime)s %(levelname)s [%(name)s] [%(filename)s:%(lineno)d] [trace_id=%(otelTraceID)s span_id=%(otelSpanID)s resource.service.name=%(otelServiceName)s] - %(message)s")
-    # handler.setFormatter(formatter)
-    # LoggingInstrumentor().instrument(set_logging_format=True)
+    LoggingInstrumentor().instrument(set_logging_format=True)
     FastAPIInstrumentor.instrument_app(app, tracer_provider=tracer)
