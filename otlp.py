@@ -35,4 +35,4 @@ def set_otlp(app: ASGIApp, app_name: str, otlp_endp: str):
     # formatter = logging.Formatter("%(asctime)s %(levelname)s [%(name)s] [%(filename)s:%(lineno)d] [trace_id=%(otelTraceID)s span_id=%(otelSpanID)s resource.service.name=%(otelServiceName)s] - %(message)s")
     # handler.setFormatter(formatter)
     # LoggingInstrumentor().instrument(set_logging_format=True)
-    # FastAPIInstrumentor.instrument_app(app, tracer_provider=tracer)
+    FastAPIInstrumentor.instrument_app(app, tracer_provider=tracer)
