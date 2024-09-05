@@ -5,7 +5,7 @@ from typing import Optional
 import uvicorn
 from fastapi import FastAPI, Response
 from metrics import PrometheusMiddleware, metrics
-from otlp import set_otlp_tracing, set_otlp_logging
+from otlp import set_otlp
 
 APP_NAME = "app_test123"
 EXPOSE_PORT = 8000
@@ -18,8 +18,7 @@ app.add_middleware(PrometheusMiddleware, app_name=APP_NAME)
 app.add_route("/metrics", metrics)
 
 # Setting OpenTelemetry
-set_otlp_tracing(app, APP_NAME, OTLP_GRPC_ENDPOINT)
-set_otlp_logging(app, APP_NAME, OTLP_GRPC_ENDPOINT)
+set_otlp(app, APP_NAME, OTLP_GRPC_ENDPOINT)
 
 @app.get("/")
 async def read_root():
