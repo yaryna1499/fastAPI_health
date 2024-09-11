@@ -9,7 +9,7 @@ from otlp import set_otlp
 
 APP_NAME = "app_test123"
 EXPOSE_PORT = 8000
-OTLP_GRPC_ENDPOINT = "http://54.87.220.156:4343"
+OTLP_GRPC_ENDPOINT = "grpc://44.222.201.145:4343"
 
 app = FastAPI()
 
