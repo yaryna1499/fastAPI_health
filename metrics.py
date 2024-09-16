@@ -13,7 +13,7 @@ from starlette.responses import Response
 from starlette.routing import Match
 from starlette.status import HTTP_500_INTERNAL_SERVER_ERROR
 from starlette.types import ASGIApp
-
+from config import APP_NAME
 
 INFO = Gauge("fastapi_app_info", "FastAPI application information.", ["app_name"])
 REQUESTS = Counter(
@@ -44,7 +44,7 @@ REQUESTS_IN_PROGRESS = Gauge(
 
 
 class PrometheusMiddleware(BaseHTTPMiddleware):
-    def __init__(self, app: ASGIApp, app_name: str = "fastapi-app") -> None:
+    def __init__(self, app: ASGIApp, app_name: str = APP_NAME) -> None:
         super().__init__(app)
         self.app_name = app_name
         INFO.labels(app_name=self.app_name).inc()
