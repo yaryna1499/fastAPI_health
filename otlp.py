@@ -28,8 +28,8 @@ def set_otlp(app: ASGIApp, app_name: str, otlp_endp: str):
     logger_provider.add_log_record_processor(BatchLogRecordProcessor(OTLPLogExporter(endpoint=otlp_endp, insecure=True)))
     handler = LoggingHandler(level=logging.DEBUG, logger_provider=logger_provider)
     logger.addHandler(handler)
-    # formatter = logging.Formatter("%(asctime)s %(levelname)s [%(name)s] [%(filename)s:%(lineno)d] [trace_id=%(otelTraceID)s span_id=%(otelSpanID)s resource.service.name=%(otelServiceName)s] - %(message)s")
-    # handler.setFormatter(JSONFormatter())
+    formatter = logging.Formatter("%(asctime)s %(levelname)s [%(name)s] [%(filename)s:%(lineno)d] [trace_id=%(otelTraceID)s span_id=%(otelSpanID)s resource.service.name=%(otelServiceName)s] - %(message)s")
+    handler.setFormatter(formatter)
 
     # collect traces from logging events
     LoggingInstrumentor().instrument(set_logging_format=True)
