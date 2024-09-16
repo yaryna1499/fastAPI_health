@@ -32,7 +32,7 @@ async def read_item(item_id: int, q: Optional[str] = None):
 @app.get("/io_task")
 async def io_task():
     time.sleep(1)
-    logger.error("io task")
+    logger.info("io task")
     return "IO bound task finish!"
 
 
@@ -60,7 +60,7 @@ async def random_sleep(response: Response):
 
 @app.get("/error_test")
 async def error_test(response: Response):
-    logger.error("got error!!!!")
+    logger.exception("got error!!!!")
     raise ValueError("value error")
 
 
