@@ -1,6 +1,6 @@
 import logging
-import sys
-import logging.handlers
+from pythonjsonlogger.jsonlogger import JsonFormatter
+
 
 class EndpointFilter(logging.Filter):
     def filter(self, record: logging.LogRecord) -> bool:
@@ -8,28 +8,7 @@ class EndpointFilter(logging.Filter):
 
 logger = logging.getLogger("fast-api-custom-logger")
 logger.setLevel(logging.INFO)
-stream_handler = logging.StreamHandler(sys.stdout)
+stream_handler = logging.StreamHandler()
+stream_handler.setFormatter(JsonFormatter("%(asctime)s %(levelname)s [%(name)s] [%(filename)s:%(lineno)d] [trace_id=%(otelTraceID)s span_id=%(otelSpanID)s resource.service.name=%(otelServiceName)s] - %(message)s"))
 logger.addHandler(stream_handler)
 logger.addFilter(EndpointFilter())
-
-# json formatter
-
-import json
-
-class JSONFormatter(logging.Formatter):
-    def format(self, record):
-        log_record = {
-            'time': self.formatTime(record, self.datefmt),
-            'level': record.levelname,
-            'name': record.name,
-            'filename': record.filename,
-            'line': record.lineno,
-            'trace_id': getattr(record, 'otelTraceID', None),
-            'span_id': getattr(record, 'otelSpanID', None),
-            'service_name': getattr(record, 'otelServiceName', None),
-            'message': record.getMessage(),
-        }
-        return json.dumps(log_record)
-
-
-# stream_handler.setFormatter(JSONFormatter())
